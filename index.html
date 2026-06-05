@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoonLett - AI Viral Clipper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #0F172A 0%, #1e293b 100%); 
+            color: white; 
+            font-family: system-ui, sans-serif;
+        }
+        .gradient-text { 
+            background: linear-gradient(to right, #D900FF, #32CD32); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .glass { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-magenta {
+            background: linear-gradient(135deg, #D900FF 0%, #A300C2 100%);
+            transition: all 0.3s;
+        }
+        .btn-magenta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(217, 0, 255, 0.4);
+        }
+        .btn-lime {
+            background: linear-gradient(135deg, #32CD32 0%, #228B22 100%);
+            transition: all 0.3s;
+        }
+        .btn-lime:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(50, 205, 50, 0.4);
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="text-2xl font-black cursor-pointer" onclick="showPage('home')">
+                <span class="text-magenta">Moon</span><span class="text-lime">Lett</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="showPage('home')" class="text-sm hover:text-lime transition">Home</button>
+                <button onclick="showPage('pricing')" class="text-sm hover:text-lime transition">Harga</button>
+                <button onclick="showPage('admin')" class="text-sm hover:text-lime transition">Admin</button>
+                <div id="creditDisplay" class="hidden bg-slate-800 px-3 py-1 rounded-full text-sm border border-slate-700">
+                    <i class="fas fa-coins text-yellow-400 mr-1"></i> <span id="creditValue">0</span>
+                </div>
+                <button id="authButton" onclick="toggleLoginModal()" class="btn-magenta px-4 py-2 rounded-full text-sm font-bold text-white">
+                    Masuk
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page-section">
+        <div class="max-w-4xl mx-auto px-5 py-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6">
+                Ubah Video YouTube Jadi<br>
+                <span class="gradient-text">Clip Viral 9:16</span>
+            </h1>
+            <p class="text-slate-400 mb-8 text-lg">AI menganalisis & memotong momen terbaik. Mulai Rp 1.000!</p>
+
+            <div class="glass p-4 rounded-2xl max-w-xl mx-auto mb-6">
+                <input type="text" id="youtubeUrl" placeholder="Paste link YouTube di sini..." 
+                    class="w-full bg-slate-900/60 px-4 py-3 rounded-xl mb-3 outline-none border border-slate-700 focus:border-magenta text-white">
+                <button onclick="generateClips()" class="w-full btn-magenta text-white font-bold py-3 rounded-xl">
+                    <i class="fas fa-magic mr-2"></i>Generate Clip Viral
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden max-w-2xl mx-auto px-5 text-center">
+            <div class="glass p-8 rounded-2xl">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-magenta mb-4"></i>
+                <p>AI sedang menganalisis...</p>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="resultArea" class="hidden max-w-4xl mx-auto px-5">
+            <div class="glass rounded-2xl p-6 border-t-4 border-lime">
+                <h3 class="text-xl font-bold mb-4"><i class="fas fa-check-circle text-lime mr-2"></i>Momen Viral Ditemukan!</h3>
+                <div id="clipsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICING PAGE -->
+    <div id="pricingPage" class="page-section hidden max-w-5xl mx-auto px-5 py-16">
+        <h2 class="text-3xl font-bold text-center mb-8 gradient-text">Harga Super Murah</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="glass p-6 rounded-2xl border border-slate-700">
+                <h3 class="text-xl font-bold mb-2">Paket Starter</h3>
+                <div class="text-4xl font-extrabold text-lime mb-4">Rp 1.000</div>
+                <ul class="text-sm space-y-2 mb-6 text-slate-300">
+                    <li><i class="fas fa-check text-lime mr-2"></i>100 Video Clips</li>
+                    <li><i class="fas fa-check text-lime mr-2"></i>HD Quality (720p)</li>
+                    <li><i class="fas fa-check text-lime mr-2"></i>Auto Subtitle</li>
+                </ul>
+                <button onclick="buyPackage('starter', 1000)" class="w-full btn-lime text-slate-900 font-bold py-3 rounded-xl">
+                    <i class="fab fa-whatsapp mr-2"></i>Beli via WhatsApp
+                </button>
+            </div>
+            <div class="glass p-6 rounded-2xl border-2 border-magenta">
+                <h3 class="text-xl font-bold mb-2">Paket Pro</h3>
+                <div class="text-4xl font-extrabold text-magenta mb-4">Rp 10.000</div>
+                <ul class="text-sm space-y-2 mb-6 text-slate-300">
+                    <li><i class="fas fa-check text-magenta mr-2"></i>1.000 Video Clips</li>
+                    <li><i class="fas fa-check text-magenta mr-2"></i>Full HD (1080p)</li>
+                    <li><i class="fas fa-check text-magenta mr-2"></i>No Watermark</li>
+                    <li><i class="fas fa-check text-magenta mr-2"></i>Priority Support</li>
+                </ul>
+                <button onclick="buyPackage('pro', 10000)" class="w-full btn-magenta text-white font-bold py-3 rounded-xl">
+                    <i class="fab fa-whatsapp mr-2"></i>Beli via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="adminPage" class="page-section hidden max-w-6xl mx-auto px-5 py-8">
+        <h2 class="text-3xl font-bold mb-6 gradient-text">Admin Panel</h2>
+        
+        <!-- Stats -->
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+            <div class="glass p-4 rounded-xl">
+                <div class="text-slate-400 text-sm">Total Users</div>
+                <div id="totalUsers" class="text-3xl font-bold text-lime">0</div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <div class="text-slate-400 text-sm">Total Revenue</div>
+                <div id="totalRevenue" class="text-3xl font-bold text-magenta">Rp 0</div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+                <div class="text-slate-400 text-sm">Pending Payments</div>
+                <div id="pendingPayments" class="text-3xl font-bold text-yellow-400">0</div>
+            </div>
+        </div>
+
+        <!-- Pending Transactions -->
+        <div class="glass rounded-xl p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4">Transaksi Pending</h3>
+            <div id="transactionsList" class="space-y-3">
+                <p class="text-slate-400 text-center py-8">Memuat data...</p>
+            </div>
+        </div>
+
+        <!-- All Users -->
+        <div class="glass rounded-xl p-6">
+            <h3 class="text-xl font-bold mb-4">Daftar Pengguna</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-slate-700">
+                        <tr class="text-left">
+                            <th class="pb-2">Email</th>
+                            <th class="pb-2">Credits</th>
+                            <th class="pb-2">Package</th>
+                            <th class="pb-2">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList">
+                        <tr><td colspan="4" class="py-4 text-center text-slate-400">Memuat...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="glass p-6 rounded-2xl max-w-md w-full relative">
+            <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-center mb-6 gradient-text">Masuk ke MoonLett</h3>
+            
+            <button onclick="loginWithGoogle()" class="w-full bg-white text-slate-900 font-bold py-3 rounded-xl mb-3">
+                <i class="fab fa-google text-red-500 mr-2"></i>Login dengan Google
+            </button>
+            
+            <div class="my-4 flex items-center gap-4">
+                <div class="flex-1 h-px bg-slate-700"></div>
+                <span class="text-slate-500 text-sm">ATAU</span>
+                <div class="flex-1 h-px bg-slate-700"></div>
+            </div>
+            
+            <input type="email" id="emailInput" placeholder="Email" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 mb-3 outline-none focus:border-magenta text-white">
+            <input type="password" id="passwordInput" placeholder="Password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 mb-4 outline-none focus:border-magenta text-white">
+            <button onclick="emailLogin()" class="w-full btn-magenta text-white font-bold py-3 rounded-xl mb-3">Masuk</button>
+            <button onclick="emailSignup()" class="w-full bg-slate-700 text-white font-bold py-3 rounded-xl">Daftar Akun Baru</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== KONFIGURASI ====================
+        const CONFIG = {
+            SUPABASE_URL: 'https://xafqmpgvklgoculdqjuk.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhZnFtcGd2a2xnb2N1bGRxanVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Mzg4NDIsImV4cCI6MjA5NjIxNDg0Mn0.MGXPAvEO8nEOmDM3sOXlxarTDgL7DDN6m4k03q6OQrk',
+            WA_NUMBER: '6287754900052',
+            ADMIN_EMAIL: 'irvanyudha60@gmail.com'
+        };
+
+        let supabase = null;
+        let currentUser = null;
+        let isAdmin = false;
+
+        // ==================== INIT ====================
+        window.onload = function() {
+            if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL_HERE') {
+                supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+                checkUser();
+            }
+        };
+
+        // ==================== NAVIGATION ====================
+        function showPage(page) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+            
+            if (page === 'home') {
+                document.getElementById('homePage').classList.remove('hidden');
+            } else if (page === 'pricing') {
+                document.getElementById('pricingPage').classList.remove('hidden');
+            } else if (page === 'admin') {
+                if (!isAdmin) {
+                    alert('Akses ditolak! Hanya admin yang bisa mengakses.');
+                    showPage('home');
+                    return;
+                }
+                document.getElementById('adminPage').classList.remove('hidden');
+                loadAdminData();
+            }
+        }
+
+        // ==================== AUTH ====================
+        function toggleLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.toggle('hidden');
+        }
+
+        async function checkUser() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                isAdmin = currentUser.email === CONFIG.ADMIN_EMAIL;
+                await loadUserCredits();
+                updateUI();
+            }
+        }
+
+        async function loginWithGoogle() {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        }
+
+        async function emailLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Login gagal: ' + error.message);
+            } else {
+                currentUser = data.user;
+                isAdmin = currentUser.email === CONFIG.ADMIN_EMAIL;
+                await loadUserCredits();
+                updateUI();
+                toggleLoginModal();
+            }
+        }
+
+        async function emailSignup() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                alert('Daftar gagal: ' + error.message);
+            } else {
+                await supabase.from('users').insert({
+                    email: email,
+                    credits: 10,
+                    package_type: 'free'
+                });
+                alert('Akun berhasil dibuat! Silakan login.');
+                currentUser = data.user;
+                updateUI();
+                toggleLoginModal();
+            }
+        }
+
+        async function loadUserCredits() {
+            const { data } = await supabase
+                .from('users')
+                .select('credits')
+                .eq('email', currentUser.email)
+                .single();
+            if (data) {
+                document.getElementById('creditValue').textContent = data.credits;
+                document.getElementById('creditDisplay').classList.remove('hidden');
+            }
+        }
+
+        function updateUI() {
+            const authBtn = document.getElementById('authButton');
+            if (currentUser) {
+                authBtn.textContent = isAdmin ? 'Admin' : 'Logout';
+                authBtn.onclick = isAdmin ? function() { showPage('admin'); } : logout;
+                document.getElementById('creditDisplay').classList.remove('hidden');
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        // ==================== MAIN FEATURES ====================
+        async function generateClips() {
+            if (!currentUser) {
+                alert('Silakan login terlebih dahulu!');
+                toggleLoginModal();
+                return;
+            }
+
+            const url = document.getElementById('youtubeUrl').value;
+            if (!url || !url.includes('youtube')) {
+                alert('Masukkan link YouTube yang valid!');
+                return;
+            }
+
+            const { data: userData } = await supabase
+                .from('users')
+                .select('credits')
+                .eq('email', currentUser.email)
+                .single();
+
+            if (userData.credits <= 0) {
+                alert('Kredit habis! Silakan beli paket.');
+                showPage('pricing');
+                return;
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            await new Promise(r => setTimeout(r, 3000));
+
+            await supabase.from('users').update({ credits: userData.credits - 1 }).eq('email', currentUser.email);
+            await supabase.from('videos').insert({
+                user_id: currentUser.id,
+                source_url: url,
+                status: 'completed',
+                clips_generated: 3
+            });
+
+            loadUserCredits();
+            displayResults();
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('resultArea').classList.remove('hidden');
+        }
+
+        function displayResults() {
+            const clips = [
+                { time: "00:15 - 00:45", hook: "Pembukaan yang Menghentak", score: 95 },
+                { time: "01:20 - 01:50", hook: "Plot Twist", score: 88 }
+            ];
+
+            const container = document.getElementById('clipsContainer');
+            container.innerHTML = clips.map(clip => `
+                <div class="bg-slate-800 p-4 rounded-xl mb-3">
+                    <div class="flex justify-between mb-2">
+                        <span class="bg-magenta/20 text-magenta text-xs px-2 py-1 rounded">Score: ${clip.score}%</span>
+                        <span class="text-lime">${clip.time}</span>
+                    </div>
+                    <h4 class="font-bold mb-2">${clip.hook}</h4>
+                    <button class="w-full btn-lime text-slate-900 text-sm font-bold py-2 rounded">
+                        <i class="fas fa-download mr-1"></i>Download
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function buyPackage(packageType, amount) {
+            if (!currentUser) {
+                alert('Silakan login untuk membeli!');
+                toggleLoginModal();
+                return;
+            }
+
+            const packageName = packageType === 'starter' ? 'Paket Starter' : 'Paket Pro';
+            await supabase.from('transactions').insert({
+                user_id: currentUser.id,
+                package_type: packageType,
+                amount: amount,
+                payment_status: 'pending'
+            });
+
+            const message = `Halo! Saya ingin beli *${packageName}* Rp ${amount}. Email: ${currentUser.email}`;
+            window.open(`https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        // ==================== ADMIN PANEL ====================
+        async function loadAdminData() {
+            const { data: transactions } = await supabase
+                .from('transactions')
+                .select('*, users(email)')
+                .eq('payment_status', 'pending')
+                .order('created_at', { ascending: false });
+
+            const transContainer = document.getElementById('transactionsList');
+            if (transactions && transactions.length > 0) {
+                transContainer.innerHTML = transactions.map(t => `
+                    <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${t.users?.email}</div>
+                            <div class="text-sm text-slate-400">${t.package_type} - Rp ${t.amount}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="approvePayment('${t.id}', '${t.user_id}', '${t.package_type}')" 
+                                class="bg-lime text-slate-900 px-4 py-2 rounded-lg text-sm font-bold">
+                                Approve
+                            </button>
+                            <button onclick="rejectPayment('${t.id}')" 
+                                class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold">
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                transContainer.innerHTML = '<p class="text-center text-slate-400 py-4">Tidak ada transaksi pending</p>';
+            }
+
+            const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+            const usersContainer = document.getElementById('usersList');
+            if (users) {
+                usersContainer.innerHTML = users.map(u => `
+                    <tr class="border-b border-slate-800">
+                        <td class="py-3">${u.email}</td>
+                        <td class="py-3">${u.credits}</td>
+                        <td class="py-3">${u.package_type}</td>
+                        <td class="py-3">
+                            <button onclick="addCredits('${u.id}', '${u.email}')" class="text-lime hover:underline text-xs">
+                                + Add Credits
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('totalUsers').textContent = users.length;
+                const revenue = users.reduce((sum, u) => sum + (u.package_type === 'pro' ? 10000 : u.package_type === 'starter' ? 1000 : 0), 0);
+                document.getElementById('totalRevenue').textContent = 'Rp ' + revenue.toLocaleString('id-ID');
+                document.getElementById('pendingPayments').textContent = transactions ? transactions.length : 0;
+            }
+        }
+
+        async function approvePayment(transactionId, userId, packageType) {
+            const credits = packageType === 'starter' ? 100 : 1000;
+            const packageExpiry = new Date();
+            packageExpiry.setMonth(packageExpiry.getMonth() + 1);
+
+            await supabase.from('transactions').update({ payment_status: 'paid', processed_at: new Date() }).eq('id', transactionId);
+            await supabase.from('users').update({ 
+                credits: credits,
+                package_type: packageType,
+                package_expiry: packageExpiry.toISOString()
+            }).eq('id', userId);
+
+            alert('Pembayaran disetujui! Kredit ditambahkan.');
+            loadAdminData();
+        }
+
+        async function rejectPayment(transactionId) {
+            await supabase.from('transactions').update({ payment_status: 'rejected' }).eq('id', transactionId);
+            alert('Pembayaran ditolak.');
+            loadAdminData();
+        }
+
+        async function addCredits(userId, userEmail) {
+            const amount = prompt(`Tambah kredit untuk ${userEmail}:`, '100');
+            if (amount) {
+                const { data } = await supabase.from('users').select('credits').eq('id', userId).single();
+                await supabase.from('users').update({ credits: data.credits + parseInt(amount) }).eq('id', userId);
+                alert(`Berhasil menambah ${amount} kredit!`);
+                loadAdminData();
+            }
+        }
+    </script>
+</body>
+</html>
